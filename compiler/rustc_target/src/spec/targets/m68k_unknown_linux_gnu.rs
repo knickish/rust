@@ -1,5 +1,5 @@
 use crate::abi::Endian;
-use crate::spec::{base, Target, TargetOptions};
+use crate::spec::{base, StaticCow, PanicStrategy, Target, TargetOptions};
 
 pub(crate) fn target() -> Target {
     let mut base = base::linux_gnu::opts();
@@ -12,11 +12,21 @@ pub(crate) fn target() -> Target {
             description: Some("Motorola 680x0 Linux".into()),
             tier: Some(3),
             host_tools: Some(false),
-            std: None, // ?
+            std: Some(true), // ?
         },
         pointer_width: 32,
         data_layout: "E-m:e-p:32:16:32-i8:8:8-i16:16:16-i32:16:32-n8:16:32-a:0:16-S16".into(),
         arch: "m68k".into(),
-        options: TargetOptions { endian: Endian::Big, mcount: "_mcount".into(), ..base },
+        options: TargetOptions { 
+            endian: Endian::Big,    
+            mcount: "_mcount".into(), 
+            llvm_args: StaticCow::Owned(vec![
+                // StaticCow::Borrowed("-debug-only=m68k-isel")
+                StaticCow::Borrowed("--print-on-crash"),
+                StaticCow::Borrowed("-debug-only=m68k-isel,M68k-instr-info,m68k-asm-printer,m68k-collapse-movem")
+            ]),
+            panic_strategy: PanicStrategy::Abort,
+            ..base 
+        },
     }
 }
